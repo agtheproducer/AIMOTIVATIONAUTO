@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AbsoluteFill, Audio, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { BRAND_NAME, colors, fonts } from "./theme.js";
 
 const wordSchema = z.object({
   text: z.string(),
@@ -30,8 +31,24 @@ export const ReelComposition: React.FC<Props> = ({ captionWords, audioSrc }) => 
   const windowWords = captionWords.slice(windowStart, windowStart + 7);
 
   return (
-    <AbsoluteFill style={{ backgroundColor: "#0a0a0a" }}>
+    <AbsoluteFill style={{ backgroundColor: colors.ink }}>
       {audioSrc ? <Audio src={staticFile(audioSrc)} /> : null}
+
+      <div
+        style={{
+          position: "absolute",
+          top: 56,
+          left: 56,
+          fontFamily: fonts.mono,
+          fontSize: 26,
+          letterSpacing: 2,
+          color: colors.textSecondary,
+          textTransform: "uppercase",
+        }}
+      >
+        {BRAND_NAME}
+      </div>
+
       <AbsoluteFill
         style={{
           justifyContent: "flex-end",
@@ -41,7 +58,7 @@ export const ReelComposition: React.FC<Props> = ({ captionWords, audioSrc }) => 
       >
         <div
           style={{
-            fontFamily: "Helvetica, Arial, sans-serif",
+            fontFamily: fonts.sans,
             fontSize: 68,
             fontWeight: 800,
             textAlign: "center",
@@ -53,7 +70,7 @@ export const ReelComposition: React.FC<Props> = ({ captionWords, audioSrc }) => 
             <span
               key={windowStart + i}
               style={{
-                color: windowStart + i === activeIndex ? "#ffcc00" : "#ffffff",
+                color: windowStart + i === activeIndex ? colors.accent : colors.textPrimary,
                 marginRight: 14,
               }}
             >

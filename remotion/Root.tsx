@@ -30,6 +30,8 @@ export const RemotionRoot: React.FC = () => {
         schema={carouselSlideSchema}
         defaultProps={{
           text: "",
+          citation: null,
+          subtext: null,
           slideNumber: 1,
           totalSlides: 5,
           isCta: false,

@@ -73,7 +73,11 @@ async function main() {
     const postId = await publishReel({ videoUrl, caption: content.caption });
     console.log(`[publish] Published reel ${postId}`);
   } else {
-    const slidePaths = await renderCarousel({ slides: content.slides, id });
+    const slidePaths = await renderCarousel({
+      slides: content.slides,
+      ctaSubtext: content.ctaSubtext,
+      id,
+    });
     const imageUrls = await Promise.all(
       slidePaths.map((p, i) =>
         uploadPublicAsset({

@@ -15,6 +15,7 @@
     "@aws-sdk/client-s3": "^3.679.0",
     "@remotion/bundler": "^4.0.230",
     "@remotion/cli": "^4.0.230",
+    "@remotion/google-fonts": "^4.0.230",
     "@remotion/renderer": "^4.0.230",
     "dotenv": "^16.4.5",
     "luxon": "^3.5.0",

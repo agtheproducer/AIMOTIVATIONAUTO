@@ -8,9 +8,15 @@ export interface ReelContent {
   caption: string;
 }
 
+export interface CarouselSlideContent {
+  text: string;
+  citation: string | null; // named source; only content slides carry one
+}
+
 export interface CarouselContent {
   format: "carousel";
-  slides: string[]; // slide 1..N text; last slide is always the follow CTA
+  slides: CarouselSlideContent[]; // content slides only -- CTA slide is separate
+  ctaSubtext: string; // second line on the CTA slide
   caption: string;
 }
 
@@ -62,14 +68,28 @@ Return JSON exactly as: {"script": "...", "caption": "..."}`,
     system: SYSTEM_PROMPT,
     prompt: `Pillar: ${pillar.label}\nBrief: ${pillar.brief}\nstoryContext: ${storyContext}
 
-Write a 5-slide Instagram carousel. Slides 1-4 are content (short, punchy,
-one idea per slide, under 40 words each). Slide 5 is ALWAYS a "Follow for
-the daily protocol" CTA slide, mentioning that this account posts twice a
-day and that commenting MOTIVATION gets a DM with the daily task list.
-Also write an Instagram caption (2-4 sentences, 3-5 hashtags).
+Write 4 Instagram carousel content slides (short, punchy, one idea per
+slide, under 40 words each). Each slide that makes a factual claim needs a
+"citation" naming the specific real source (study name or Huberman Lab
+episode) -- use null for a slide that is pure narrative/opinion with no
+factual claim. Also write:
+- "ctaSubtext": one short line for the follow/CTA slide, e.g. "Comment
+  MOTIVATION for today's task via DM." (this account posts twice a day)
+- "caption": an Instagram caption (2-4 sentences, 3-5 hashtags)
 
-Return JSON exactly as: {"slides": ["...", "...", "...", "...", "..."], "caption": "..."}`,
+Return JSON exactly as:
+{"slides": [{"text": "...", "citation": "..."|null}, ...four of these...],
+ "ctaSubtext": "...", "caption": "..."}`,
   });
-  const parsed = JSON.parse(raw) as { slides: string[]; caption: string };
-  return { format: "carousel", slides: parsed.slides, caption: parsed.caption };
+  const parsed = JSON.parse(raw) as {
+    slides: CarouselSlideContent[];
+    ctaSubtext: string;
+    caption: string;
+  };
+  return {
+    format: "carousel",
+    slides: parsed.slides,
+    ctaSubtext: parsed.ctaSubtext,
+    caption: parsed.caption,
+  };
 }

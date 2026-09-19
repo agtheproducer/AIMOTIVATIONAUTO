@@ -1,6 +1,7 @@
-# AI Motivation Auto
+# AI Motivation Auto — THE PROTOCOL
 
-Automated content pipeline for a motivation-focused Instagram account: it
+Automated content pipeline for THE PROTOCOL, a motivation-focused Instagram
+account: it
 generates a script/carousel, turns it into a voiced reel or a branded
 carousel, and posts it to Instagram twice a day. Runs entirely on GitHub
 Actions' scheduler -- no server to maintain, and it keeps running whether or

@@ -3,13 +3,24 @@ import { renderStill, selectComposition } from "@remotion/renderer";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import type { CarouselSlideContent } from "./generateContent.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REMOTION_ROOT = path.join(__dirname, "..", "..", "remotion");
 const OUT_DIR = path.join(__dirname, "..", "..", "render-tmp");
 
+interface SlideProps extends Record<string, unknown> {
+  text: string;
+  citation: string | null;
+  subtext: string | null;
+  slideNumber: number;
+  totalSlides: number;
+  isCta: boolean;
+}
+
 export async function renderCarousel(params: {
-  slides: string[];
+  slides: CarouselSlideContent[]; // content slides only
+  ctaSubtext: string;
   id: string;
 }): Promise<string[]> {
   await mkdir(OUT_DIR, { recursive: true });
@@ -18,15 +29,29 @@ export async function renderCarousel(params: {
     entryPoint: path.join(REMOTION_ROOT, "Root.tsx"),
   });
 
-  const outputPaths: string[] = [];
-  for (let i = 0; i < params.slides.length; i++) {
-    const isCta = i === params.slides.length - 1;
-    const inputProps = {
-      text: params.slides[i],
+  const totalSlides = params.slides.length + 1; // + the CTA slide
+  const allSlideProps: SlideProps[] = [
+    ...params.slides.map((s, i) => ({
+      text: s.text,
+      citation: s.citation,
+      subtext: null,
       slideNumber: i + 1,
-      totalSlides: params.slides.length,
-      isCta,
-    };
+      totalSlides,
+      isCta: false,
+    })),
+    {
+      text: "Follow for the daily protocol.",
+      citation: null,
+      subtext: params.ctaSubtext,
+      slideNumber: totalSlides,
+      totalSlides,
+      isCta: true,
+    },
+  ];
+
+  const outputPaths: string[] = [];
+  for (let i = 0; i < allSlideProps.length; i++) {
+    const inputProps = allSlideProps[i];
     const composition = await selectComposition({
       serveUrl: bundleLocation,
       id: "CarouselSlide",
