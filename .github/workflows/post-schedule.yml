@@ -1,0 +1,50 @@
+name: Post to Instagram
+
+on:
+  schedule:
+    # Runs every 15 minutes, all day, in UTC. The pipeline itself (src/pipeline/publish.ts)
+    # converts to TIMEZONE and only actually generates/renders/posts when the current
+    # local time is within WINDOW_MINUTES of a scheduled slot (7:00 / 20:30 local) AND
+    # that slot hasn't been posted yet today. Every other run is a fast no-op.
+    # This survives daylight saving time automatically, at the cost of extra no-op runs
+    # -- see README "GitHub Actions minutes" for the trade-off and alternatives.
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {} # lets you trigger a run manually from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - name: Run publish pipeline
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
+          TIMEZONE: ${{ vars.TIMEZONE }}
+        run: npm run publish
+
+      - name: Commit updated state
+        run: |
+          git config user.name "aimotivationauto-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state/last-post.json
+          git diff --cached --quiet || git commit -m "chore: update publish state [skip ci]"
+          git push

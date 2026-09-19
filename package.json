@@ -1,0 +1,33 @@
+{
+  "name": "aimotivationauto",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Automated content pipeline for a motivation-focused Instagram account: script generation, voiceover, video/carousel rendering, and posting.",
+  "type": "module",
+  "scripts": {
+    "publish": "tsx src/pipeline/publish.ts",
+    "publish:dry-run": "DRY_RUN=true tsx src/pipeline/publish.ts",
+    "typecheck": "tsc --noEmit",
+    "remotion:studio": "remotion studio remotion/Root.tsx"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0",
+    "@aws-sdk/client-s3": "^3.679.0",
+    "@remotion/bundler": "^4.0.230",
+    "@remotion/cli": "^4.0.230",
+    "@remotion/renderer": "^4.0.230",
+    "dotenv": "^16.4.5",
+    "luxon": "^3.5.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.230",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.4.2",
+    "@types/node": "^22.7.5",
+    "@types/react": "^18.3.11",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
+  }
+}
