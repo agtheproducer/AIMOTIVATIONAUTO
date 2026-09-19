@@ -11,6 +11,10 @@ export interface ReelContent {
 export interface CarouselSlideContent {
   text: string;
   citation: string | null; // named source; only content slides carry one
+  // Search terms for a real photo behind this slide (Pexels). E.g. "cold
+  // water shower" or "person lifting barbell gym". Keep it concrete and
+  // visual, not abstract -- it's a photo search query, not a caption.
+  imageQuery: string;
 }
 
 export interface CarouselContent {
@@ -127,13 +131,17 @@ with a direct confrontation, a "you know when" style relatable moment, or a
 specific concrete claim that stops the scroll. Not a mild setup line. Each
 slide that makes a factual claim needs a "citation" naming the specific real
 source (study name or Huberman Lab episode). Use null for a slide that is
-pure narrative or opinion with no factual claim. Also write:
+pure narrative or opinion with no factual claim. Each slide also needs an
+"imageQuery": a short, concrete, visual search phrase for a real photo that
+matches what that slide is actually describing (e.g. "cold water shower",
+"person lifting barbell gym", "empty bed morning"). Think like you're
+searching a stock photo site, not writing a caption. Also write:
 - "ctaSubtext": one short line for the follow/CTA slide, e.g. "Comment
   MOTIVATION for today's task via DM." (this account posts twice a day)
 - "caption": an Instagram caption (2-4 sentences, 3-5 hashtags)
 
 Return JSON exactly as:
-{"slides": [{"text": "...", "citation": "..."|null}, ...four of these...],
+{"slides": [{"text": "...", "citation": "..."|null, "imageQuery": "..."}, ...four of these...],
  "ctaSubtext": "...", "caption": "..."}`,
   });
   const parsed = JSON.parse(raw) as {

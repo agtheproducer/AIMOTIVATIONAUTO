@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AbsoluteFill } from "remotion";
+import { AbsoluteFill, Img, staticFile } from "remotion";
 import { BRAND_NAME, colors, fonts } from "./theme";
 
 export const carouselSlideSchema = z.object({
@@ -13,6 +13,10 @@ export const carouselSlideSchema = z.object({
   slideNumber: z.number(),
   totalSlides: z.number(),
   isCta: z.boolean(),
+  // Filename relative to remotion/public/, or null for the flat surface
+  // color background. CTA slides never get one -- the accent-colored
+  // button is the visual anchor there, a photo would compete with it.
+  backgroundImage: z.string().nullable(),
 });
 
 type Props = z.infer<typeof carouselSlideSchema>;
@@ -27,100 +31,118 @@ export const CarouselSlide: React.FC<Props> = ({
   slideNumber,
   totalSlides,
   isCta,
+  backgroundImage,
 }) => {
   return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: colors.surface,
-        color: colors.textPrimary,
-        fontFamily: fonts.sans,
-        padding: 100,
-        boxSizing: "border-box",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        gap: 40,
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          top: 56,
-          left: 100,
-          fontFamily: fonts.mono,
-          fontSize: 26,
-          letterSpacing: 2,
-          color: colors.textSecondary,
-          textTransform: "uppercase",
-        }}
-      >
-        {BRAND_NAME}
-      </div>
-
-      <div
-        style={{
-          fontSize: isCta ? 96 : 88,
-          fontWeight: 800,
-          lineHeight: 1.3,
-          whiteSpace: "pre-wrap",
-        }}
-      >
-        {text}
-      </div>
-
-      {isCta && subtext ? (
-        <div style={{ fontSize: 48, color: colors.textSecondary, lineHeight: 1.4 }}>{subtext}</div>
+    <AbsoluteFill style={{ backgroundColor: colors.surface }}>
+      {backgroundImage ? (
+        <Img
+          src={staticFile(backgroundImage)}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        />
       ) : null}
 
-      {isCta ? (
-        <div
+      {backgroundImage ? (
+        <AbsoluteFill
           style={{
-            background: colors.accent,
-            color: colors.ink,
-            borderRadius: 999,
-            padding: "28px 48px",
-            fontWeight: 700,
-            fontSize: 46,
-            width: "fit-content",
+            background:
+              "linear-gradient(180deg, rgba(10,14,18,0.6) 0%, rgba(10,14,18,0.72) 45%, rgba(10,14,18,0.95) 100%)",
           }}
-        >
-          Comment MOTIVATION &darr;
-        </div>
-      ) : citation ? (
+        />
+      ) : null}
+
+      <AbsoluteFill
+        style={{
+          color: colors.textPrimary,
+          fontFamily: fonts.sans,
+          padding: 100,
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: 40,
+        }}
+      >
         <div
           style={{
-            display: "inline-block",
-            borderBottom: `2px solid ${colors.border}`,
-            paddingBottom: 10,
+            position: "absolute",
+            top: 56,
+            left: 100,
             fontFamily: fonts.mono,
-            fontSize: 34,
-            letterSpacing: 1,
+            fontSize: 26,
+            letterSpacing: 2,
             color: colors.textSecondary,
             textTransform: "uppercase",
-            width: "fit-content",
           }}
         >
-          Source &mdash; {citation}
+          {BRAND_NAME}
         </div>
-      ) : null}
 
-      <div
-        style={{
-          position: "absolute",
-          bottom: 56,
-          left: 100,
-          right: 100,
-          display: "flex",
-          justifyContent: "space-between",
-          fontSize: 34,
-          color: colors.textSecondary,
-        }}
-      >
-        <span>
-          {slideNumber} / {totalSlides}
-        </span>
-        <span>{isCta ? "Posted 2x/day" : "Swipe →"}</span>
-      </div>
+        <div
+          style={{
+            fontSize: isCta ? 96 : 88,
+            fontWeight: 800,
+            lineHeight: 1.3,
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {text}
+        </div>
+
+        {isCta && subtext ? (
+          <div style={{ fontSize: 48, color: colors.textSecondary, lineHeight: 1.4 }}>{subtext}</div>
+        ) : null}
+
+        {isCta ? (
+          <div
+            style={{
+              background: colors.accent,
+              color: colors.ink,
+              borderRadius: 999,
+              padding: "28px 48px",
+              fontWeight: 700,
+              fontSize: 46,
+              width: "fit-content",
+            }}
+          >
+            Comment MOTIVATION &darr;
+          </div>
+        ) : citation ? (
+          <div
+            style={{
+              display: "inline-block",
+              borderBottom: `2px solid ${colors.border}`,
+              paddingBottom: 10,
+              fontFamily: fonts.mono,
+              fontSize: 34,
+              letterSpacing: 1,
+              color: colors.textSecondary,
+              textTransform: "uppercase",
+              width: "fit-content",
+            }}
+          >
+            Source &mdash; {citation}
+          </div>
+        ) : null}
+
+        <div
+          style={{
+            position: "absolute",
+            bottom: 56,
+            left: 100,
+            right: 100,
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: 34,
+            color: colors.textSecondary,
+          }}
+        >
+          <span>
+            {slideNumber} / {totalSlides}
+          </span>
+          <span>{isCta ? "Posted 2x/day" : "Swipe →"}</span>
+        </div>
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };

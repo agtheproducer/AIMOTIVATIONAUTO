@@ -5,9 +5,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { CarouselSlideContent } from "./generateContent.js";
 import { browserExecutable, chromiumOptions } from "../lib/remotionBrowser.js";
+import { fetchAndSaveImage } from "../lib/pexels.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REMOTION_ROOT = path.join(__dirname, "..", "..", "remotion");
+const PUBLIC_DIR = path.join(REMOTION_ROOT, "public");
 const OUT_DIR = path.join(__dirname, "..", "..", "render-tmp");
 
 interface SlideProps extends Record<string, unknown> {
@@ -17,6 +19,7 @@ interface SlideProps extends Record<string, unknown> {
   slideNumber: number;
   totalSlides: number;
   isCta: boolean;
+  backgroundImage: string | null;
 }
 
 export async function renderCarousel(params: {
@@ -25,21 +28,35 @@ export async function renderCarousel(params: {
   id: string;
 }): Promise<string[]> {
   await mkdir(OUT_DIR, { recursive: true });
+  await mkdir(PUBLIC_DIR, { recursive: true });
 
   const bundleLocation = await bundle({
     entryPoint: path.join(REMOTION_ROOT, "index.ts"),
   });
 
   const totalSlides = params.slides.length + 1; // + the CTA slide
+
+  const contentSlideProps: SlideProps[] = await Promise.all(
+    params.slides.map(async (s, i) => {
+      const imageFilename = `${params.id}-bg-${i + 1}.jpg`;
+      const found = await fetchAndSaveImage({
+        query: s.imageQuery,
+        localPath: path.join(PUBLIC_DIR, imageFilename),
+      });
+      return {
+        text: s.text,
+        citation: s.citation,
+        subtext: null,
+        slideNumber: i + 1,
+        totalSlides,
+        isCta: false,
+        backgroundImage: found ? imageFilename : null,
+      };
+    })
+  );
+
   const allSlideProps: SlideProps[] = [
-    ...params.slides.map((s, i) => ({
-      text: s.text,
-      citation: s.citation,
-      subtext: null,
-      slideNumber: i + 1,
-      totalSlides,
-      isCta: false,
-    })),
+    ...contentSlideProps,
     {
       text: "Follow for the daily protocol.",
       citation: null,
@@ -47,6 +64,7 @@ export async function renderCarousel(params: {
       slideNumber: totalSlides,
       totalSlides,
       isCta: true,
+      backgroundImage: null, // CTA stays clean -- the accent button is the anchor here
     },
   ];
 

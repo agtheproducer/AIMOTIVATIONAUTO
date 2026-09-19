@@ -35,6 +35,7 @@ export const RemotionRoot: React.FC = () => {
           slideNumber: 1,
           totalSlides: 5,
           isCta: false,
+          backgroundImage: null,
         }}
       />
     </>
