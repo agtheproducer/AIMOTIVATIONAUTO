@@ -1,0 +1,44 @@
+name: Preview Content
+
+# Manual-only. Generates content and renders carousel slides (real photos
+# included) with NO Instagram publish, NO R2 upload, NO ElevenLabs -- purely
+# to see what the pipeline produces. Results are uploaded as a downloadable
+# build artifact rather than posted anywhere.
+on:
+  workflow_dispatch:
+    inputs:
+      pillar:
+        description: "Which pillar to preview"
+        required: true
+        default: "protocol"
+        type: choice
+        options:
+          - protocol
+          - diagnosis
+          - fight
+          - proof
+          - all
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - name: Generate + render preview
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+        run: npm run preview:carousel -- "${{ inputs.pillar }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: preview-output
+          path: preview-output/
+          retention-days: 7
