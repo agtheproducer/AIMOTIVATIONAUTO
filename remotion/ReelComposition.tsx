@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { AbsoluteFill, Audio, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
-import { BRAND_NAME, colors, fonts } from "./theme.js";
+import { BRAND_NAME, colors, fonts } from "./theme";
 
 const wordSchema = z.object({
   text: z.string(),

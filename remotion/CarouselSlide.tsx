@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { AbsoluteFill } from "remotion";
-import { BRAND_NAME, colors, fonts } from "./theme.js";
+import { BRAND_NAME, colors, fonts } from "./theme";
 
 export const carouselSlideSchema = z.object({
   text: z.string(),

@@ -4,6 +4,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { CarouselSlideContent } from "./generateContent.js";
+import { browserExecutable, chromiumOptions } from "../lib/remotionBrowser.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REMOTION_ROOT = path.join(__dirname, "..", "..", "remotion");
@@ -26,7 +27,7 @@ export async function renderCarousel(params: {
   await mkdir(OUT_DIR, { recursive: true });
 
   const bundleLocation = await bundle({
-    entryPoint: path.join(REMOTION_ROOT, "Root.tsx"),
+    entryPoint: path.join(REMOTION_ROOT, "index.ts"),
   });
 
   const totalSlides = params.slides.length + 1; // + the CTA slide
@@ -56,6 +57,8 @@ export async function renderCarousel(params: {
       serveUrl: bundleLocation,
       id: "CarouselSlide",
       inputProps,
+      browserExecutable: browserExecutable(),
+      chromiumOptions: chromiumOptions(),
     });
     const outputLocation = path.join(OUT_DIR, `${params.id}-slide-${i + 1}.png`);
     await renderStill({
@@ -63,6 +66,8 @@ export async function renderCarousel(params: {
       serveUrl: bundleLocation,
       output: outputLocation,
       inputProps,
+      browserExecutable: browserExecutable(),
+      chromiumOptions: chromiumOptions(),
     });
     outputPaths.push(outputLocation);
   }

@@ -4,3 +4,4 @@ dist/
 *.log
 remotion/out/
 render-tmp/
+preview-output/

@@ -7,8 +7,9 @@
   "scripts": {
     "publish": "tsx src/pipeline/publish.ts",
     "publish:dry-run": "DRY_RUN=true tsx src/pipeline/publish.ts",
+    "preview:carousel": "tsx src/pipeline/previewCarousel.ts",
     "typecheck": "tsc --noEmit",
-    "remotion:studio": "remotion studio remotion/Root.tsx"
+    "remotion:studio": "remotion studio remotion/index.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.0",
@@ -22,7 +23,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "remotion": "^4.0.230",
-    "zod": "^3.23.8"
+    "zod": "4.5.4"
   },
   "devDependencies": {
     "@types/luxon": "^3.4.2",

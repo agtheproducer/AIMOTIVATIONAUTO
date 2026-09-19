@@ -4,6 +4,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { synthesizeSpeech } from "../lib/elevenlabs.js";
+import { browserExecutable, chromiumOptions } from "../lib/remotionBrowser.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REMOTION_ROOT = path.join(__dirname, "..", "..", "remotion");
@@ -19,13 +20,15 @@ export async function renderReel(params: { script: string; id: string }): Promis
   await writeFile(path.join(PUBLIC_DIR, audioFilename), audio);
 
   const bundleLocation = await bundle({
-    entryPoint: path.join(REMOTION_ROOT, "Root.tsx"),
+    entryPoint: path.join(REMOTION_ROOT, "index.ts"),
   });
 
   const composition = await selectComposition({
     serveUrl: bundleLocation,
     id: "Reel",
     inputProps: { captionWords: words, audioSrc: audioFilename },
+    browserExecutable: browserExecutable(),
+    chromiumOptions: chromiumOptions(),
   });
 
   const lastWordEndMs = words.length > 0 ? words[words.length - 1].endMs : 0;
@@ -41,6 +44,8 @@ export async function renderReel(params: { script: string; id: string }): Promis
     codec: "h264",
     outputLocation,
     inputProps: { captionWords: words, audioSrc: audioFilename },
+    browserExecutable: browserExecutable(),
+    chromiumOptions: chromiumOptions(),
   });
 
   return outputLocation;

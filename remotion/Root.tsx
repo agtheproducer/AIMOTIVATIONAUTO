@@ -1,6 +1,6 @@
 import { Composition } from "remotion";
-import { ReelComposition, reelSchema } from "./ReelComposition.js";
-import { CarouselSlide, carouselSlideSchema } from "./CarouselSlide.js";
+import { ReelComposition, reelSchema } from "./ReelComposition";
+import { CarouselSlide, carouselSlideSchema } from "./CarouselSlide";
 
 const FPS = 30;
 
