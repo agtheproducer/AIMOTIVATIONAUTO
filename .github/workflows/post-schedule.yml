@@ -2,13 +2,18 @@ name: Post to Instagram
 
 on:
   schedule:
-    # Runs every 15 minutes, all day, in UTC. The pipeline itself (src/pipeline/publish.ts)
-    # converts to TIMEZONE and only actually generates/renders/posts when the current
-    # local time is within WINDOW_MINUTES of a scheduled slot (7:00 / 20:30 local) AND
-    # that slot hasn't been posted yet today. Every other run is a fast no-op.
-    # This survives daylight saving time automatically, at the cost of extra no-op runs
-    # -- see README "GitHub Actions minutes" for the trade-off and alternatives.
-    - cron: "*/15 * * * *"
+    # Hourly, all day, in UTC. The pipeline itself (src/pipeline/publish.ts) converts
+    # to TIMEZONE and only generates/renders/posts when a slot (7:00 / 20:30 local) is
+    # due, still inside its CATCHUP_MINUTES window, and not already posted. Every other
+    # run is a fast no-op. Running on the hour in UTC survives daylight saving
+    # automatically, since the local-time check is what decides whether to act.
+    #
+    # Minute 17 rather than 0 on purpose: GitHub's shared cron queue is most congested
+    # at the top of the hour, and scheduled runs there are the most likely to be delayed
+    # or dropped. Paired with the 3-hour catch-up window in publish.ts, an hourly cron
+    # gives each slot ~3 attempts, which is why this no longer needs to fire every
+    # 15 minutes (96 no-op runs/day -> 24).
+    - cron: "17 * * * *"
   workflow_dispatch: {} # lets you trigger a run manually from the Actions tab
 
 permissions:

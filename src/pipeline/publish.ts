@@ -6,20 +6,38 @@ import { renderReel } from "./renderReel.js";
 import { renderCarousel } from "./renderCarousel.js";
 import { uploadPublicAsset } from "../lib/storage.js";
 import { publishCarousel, publishReel } from "../lib/instagram.js";
-import { readState, writeState } from "../state.js";
+import { readState, markPosted } from "../state.js";
 
 const SLOT_TIMES: Record<Slot, { hour: number; minute: number }> = {
   AM: { hour: 7, minute: 0 },
   PM: { hour: 20, minute: 30 },
 };
-const WINDOW_MINUTES = 20; // how close to the target time this run must be to act
 
-function findDueSlot(now: DateTime): Slot | null {
-  for (const [slot, time] of Object.entries(SLOT_TIMES) as [Slot, { hour: number; minute: number }][]) {
+// How long after a slot's target time this pipeline will still publish it.
+//
+// GitHub's cron scheduler is best-effort: it delays runs under load and drops
+// them outright, and on this repo scheduled runs have landed 2-3 hours apart
+// despite an every-15-minutes cron. A tight window around the target time
+// therefore misses slots silently -- posting late beats not posting at all.
+// 3 hours is deliberate: it keeps the PM slot (20:30) from spilling past
+// midnight into the next calendar day.
+const CATCHUP_MINUTES = 3 * 60;
+
+// Checked latest-first so that if both slots are somehow eligible we publish
+// the fresher one rather than backfilling the morning post in the evening.
+const SLOT_ORDER: Slot[] = ["PM", "AM"];
+
+function findDueSlot(now: DateTime, postedKeys: string[], dateKey: string): Slot | null {
+  for (const slot of SLOT_ORDER) {
+    const time = SLOT_TIMES[slot];
     const target = now.set({ hour: time.hour, minute: time.minute, second: 0, millisecond: 0 });
-    if (Math.abs(now.diff(target, "minutes").minutes) <= WINDOW_MINUTES) {
-      return slot;
-    }
+    const minutesSince = now.diff(target, "minutes").minutes;
+
+    // Not yet due, or the catch-up window has closed.
+    if (minutesSince < 0 || minutesSince > CATCHUP_MINUTES) continue;
+    if (postedKeys.includes(`${dateKey}-${slot}`)) continue;
+
+    return slot;
   }
   return null;
 }
@@ -29,19 +47,16 @@ async function main() {
   const dryRun = process.env.DRY_RUN === "true";
   const now = DateTime.now().setZone(timezone);
 
-  const slot = findDueSlot(now);
+  const dateKey = now.toFormat("yyyy-LL-dd");
+  const state = await readState();
+
+  const slot = findDueSlot(now, state.postedKeys, dateKey);
   if (!slot) {
-    console.log(`[publish] ${now.toISO()} is not within a posting window. Nothing to do.`);
+    console.log(`[publish] ${now.toISO()}: no slot is due and unposted. Nothing to do.`);
     return;
   }
 
-  const dateKey = now.toFormat("yyyy-LL-dd");
   const stateKey = `${dateKey}-${slot}`;
-  const state = await readState();
-  if (state.lastPostedKey === stateKey) {
-    console.log(`[publish] Already handled ${stateKey}. Skipping.`);
-    return;
-  }
 
   const weekday = now.weekday; // 1 = Monday ... 7 = Sunday
   const entry = CALENDAR[weekday][slot];
@@ -49,7 +64,7 @@ async function main() {
 
   if (entry.format === "story") {
     console.log(`[publish] ${stateKey} is a Stories slot (${entry.note}) -- not automated yet, skipping.`);
-    await writeState({ lastPostedKey: stateKey });
+    await markPosted(state, stateKey);
     return;
   }
 
@@ -59,7 +74,7 @@ async function main() {
   if (dryRun) {
     console.log("[publish] DRY_RUN=true, skipping render/upload/publish. Generated content:");
     console.log(JSON.stringify(content, null, 2));
-    await writeState({ lastPostedKey: stateKey });
+    await markPosted(state, stateKey);
     return;
   }
 
@@ -91,7 +106,7 @@ async function main() {
     console.log(`[publish] Published carousel ${postId}`);
   }
 
-  await writeState({ lastPostedKey: stateKey });
+  await markPosted(state, stateKey);
 }
 
 main().catch((err) => {

@@ -13,9 +13,9 @@ editorial calendar this pipeline implements.
 ## How it works
 
 ```
-GitHub Actions (cron, every 15 min)
+GitHub Actions (cron, hourly)
   -> src/pipeline/publish.ts
-       -> is it within 20 min of a scheduled slot (7:00 / 20:30 local) AND not already posted today?
+       -> is a slot (7:00 / 20:30 local) due, still inside its 3h catch-up window, AND not already posted today?
             no  -> exit (no-op)
             yes -> src/config/calendar.ts: look up today's pillar + format
                 -> src/pipeline/generateContent.ts (Claude API): script or carousel slides + caption
@@ -101,7 +101,47 @@ respects the slot-window/already-posted check in `publish.ts`).
 - **Access token refresh isn't automated** -- long-lived IG tokens expire
   around 60 days; you'll need to regenerate and update the secret
   periodically until a refresh step is added.
-- **GitHub Actions minutes**: checking every 15 minutes runs ~96 times/day.
-  Each no-op check is fast, but on a private repo this eats into the
-  monthly free minutes quota faster than a plain twice-a-day cron would.
-  Making the repo public removes that limit, or I can tighten this later.
+- **Posts can land late** -- because GitHub's cron is unreliable, a slot is
+  published by the first run inside its 3-hour catch-up window rather than
+  at an exact time, so the 7:00 post may go out as late as 10:00 local. See
+  "Scheduling" below for why that trade-off is the right one.
+
+## Scheduling: why hourly and not every 15 minutes
+
+GitHub's cron is best-effort, not guaranteed. It delays scheduled runs when
+the shared queue is busy and silently drops them entirely -- on this repo,
+runs from an every-15-minutes cron have landed 2-3 hours apart.
+
+The original design paired that frequent cron with a tight +/-20 minute
+window around each slot in `publish.ts`. That combination fails badly: if no
+run happens to land inside the 40-minute window, the slot is missed with no
+error anywhere, and the next run that does fire sees itself as outside the
+window and no-ops.
+
+So the window is now a **catch-up window** instead: a slot is due from its
+target time until `CATCHUP_MINUTES` (3 hours) afterwards, and the first run
+to land in that range publishes it. Late is better than never. Because
+correctness no longer depends on a run landing in a narrow window, the cron
+drops to hourly -- 24 no-op checks a day instead of 96 -- and each slot still
+gets roughly three chances. It fires at minute 17 because the top of the hour
+is the most congested, and therefore the most-dropped, slot in GitHub's queue.
+
+`state/last-post.json` tracks a list of published slot keys
+(`YYYY-MM-DD-AM` / `-PM`) rather than a single value, so the AM and PM slots
+can't overwrite each other's bookkeeping during a catch-up.
+
+## Troubleshooting
+
+**Every scheduled run fails after 2-3 seconds, and the logs 404.** This is
+not a bug in this repo. A job that fails that fast with no step output was
+never assigned a runner, which means GitHub refused to start it at the
+account level -- almost always a billing problem (a failed payment method or
+a spending limit), which suspends Actions across every repo on the account,
+public ones included. Check <https://github.com/settings/billing>. Compare a
+failing run against a working one in the Actions API: the working job has
+`runner_id`, `runner_name`, and a populated `steps` array, and a blocked one
+has none of them.
+
+**It posts nothing but every run is green.** Check
+`state/last-post.json`. If `postedKeys` is empty, no slot has ever actually
+published, and every green run was a no-op that exited at the slot check.
